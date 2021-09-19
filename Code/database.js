@@ -11,6 +11,7 @@ const dbCon = mysql.createConnection({
     
 });
 
+
 dbCon.connect(function(error){
 
     //query SQL
