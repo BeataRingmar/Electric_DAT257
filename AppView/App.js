@@ -1,68 +1,65 @@
-import { StatusBar } from 'expo-status-bar';
-import  React, {useState} from 'react'; 
-import MapView, {Callout, Marker} from 'react-native-maps';
-import { StyleSheet, Text, View,TouchableOpacity, FlatList, Dimensions} from 'react-native';
+import  React, {useState,useEffect} from 'react'; 
+import MapView, { Marker} from 'react-native-maps';
+import { StyleSheet, Text, View,Dimensions} from 'react-native';
 //this is related to the database, if you are getting errors when running then just comment out
-import Axios from 'axios'
+import axios from 'axios'
 
 
 export default function App() {
 
   const [bathroomList, setBathroomList] = useState([]);
-
   
   // related to the database, fetches the data that is on the api end point. 
   const getBathrooms = () => {
-    Axios.get("http://localhost:3001/bathrooms").then((Response) => {
+    axios.get("http://192.168.10.116" + ":3001/bathrooms").then((Response) => {
       setBathroomList(Response.data);
-      return bathroomList; // TODO : manage the error if any
+      return bathroomList; 
+    })
+    .catch(error => {console.log(error);
     });
   };
 
+  useEffect(() => {
+    let ignore = false;
+    if (!ignore) getBathrooms()
+    console.log("At least you've gotten here");
+    return () => {ignore = true;}
+    },[]);
 
-  return (
-      <View style={styles.container}>
-        <StatusBar style="auto" />
-        <MapView style= {styles.map}  
+
+/*testing to see how arrays work, and how we can access the information inside them. Try them out if you are interested 
+in understanding better. Map function is really amazing. Here I am just making an array of just the bathroom names.
+  let result = bathroomList.map(a => a.name);
+  console.log(result);
+ */ 
+
+  //function that creates multiple markers in the map, does the using the map function. This function is called in the View
+  mapMarkers = () => {
+    return bathroomList.map((item) => <Marker
+      key={item.id}
+      coordinate={{ latitude: item.latitude, longitude: item.longitude }}
+      title = {item.name}
+    >
+    </Marker >)
+  }
+
+    return (
+      <View>
+         <MapView style= {styles.map}  
+         showsUserLocation={true}
+         showsMyLocationButton={true}
         initialRegion={{
           latitude: 57.708870,
           longitude: 11.974560,
           latitudeDelta: 0.0922,
           longitudeDelta: 0.0421,
         }}> 
-        <Marker 
-        coordinate= {{latitude: 57.708870,
-          longitude: 11.974560,}}>
-            <Callout>
-              <Text> I'm here </Text>
-            </Callout>
-        </Marker> 
-         </MapView> 
-        
-      </View>
-    );
-}; 
-
-/*
-removed this from the view for now so as to just focus on the map, this relates to the database
-   <TouchableOpacity
-        style = {styles.buttonStyle}
-        onPress = {(getBathrooms)}>    
-        <Text> Show bathrooms </Text>
-        </TouchableOpacity>
-
-         <FlatList
-        // I am trying to see if I can get the list to show up on the app using this FlatList shit
-          numColumns= {1}
-          keyExtractor= {(item) => item.name}
-          data= {bathroomList}
-          renderItem = {( {item}) => (
-            <Text style= {styles.item}> {item.name} </Text>
-          )}
-          />
-        */
-
-  
+        {mapMarkers()}
+        </MapView> 
+         </View> 
+      );
+      }
+    
 
 const styles = StyleSheet.create({
   container: {
@@ -73,19 +70,20 @@ const styles = StyleSheet.create({
   },
   buttonStyle: {
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: 'pink',
     padding: 10,
-    marginTop:16, 
+    marginTop:50, 
   }, 
   item: {
     marginTop: 24, 
     padding: 30, 
-    backgroundColor: 'yellow',
+    backgroundColor: 'orange',
     fontSize: 24, 
     marginHorizontal: 10, 
     marginTop: 24,
   },
 map: {
+  marginTop: 20,
   width: Dimensions.get('window').width,
   height: Dimensions.get('window').height,
 }, 
