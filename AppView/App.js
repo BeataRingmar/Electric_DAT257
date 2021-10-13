@@ -1,6 +1,6 @@
 import  React, {useState,useEffect} from 'react'; 
-import MapView, { Marker} from 'react-native-maps';
-import { StyleSheet, Text, View,Dimensions} from 'react-native';
+import MapView, {Callout, Marker, TabNavigator} from 'react-native-maps';
+import { StyleSheet, Text, TextInput, View, Dimensions} from 'react-native';
 //this is related to the database, if you are getting errors when running then just comment out
 import axios from 'axios'
 
@@ -11,7 +11,7 @@ export default function App() {
   
   // related to the database, fetches the data that is on the api end point. 
   const getBathrooms = () => {
-    axios.get("http://192.168.10.116" + ":3001/bathrooms").then((Response) => {
+    axios.get("http://192.168.10.164" + ":3001/bathrooms").then((Response) => {
       setBathroomList(Response.data);
       return bathroomList; 
     })
@@ -44,16 +44,36 @@ in understanding better. Map function is really amazing. Here I am just making a
   }
 
     return (
-      <View>
-         <MapView style= {styles.map}  
-         showsUserLocation={true}
-         showsMyLocationButton={true}
+      <View style={styles.container}>
+        <MapView
+        showsUserLocation={true}
+        showsMyLocationButton={true}
+        loadingEnabled={true}
+        mapType={Platform.OS == "android" ? "none" : "standard"}  // Not sure if this is needed, doesn't seem to help (for android)
+        style= {styles.map}
         initialRegion={{
           latitude: 57.708870,
           longitude: 11.974560,
           latitudeDelta: 0.0922,
           longitudeDelta: 0.0421,
-        }}> 
+        }}>
+        <View style={{ position:'absolute', top:10, width:'100%'}}>
+          <TextInput
+            style={{
+              borderRadius: 15,
+              margin: 30,
+              color: '#000',
+              borderColor: '#666',
+              backgroundColor: '#FFF',
+              borderWidth: 1,
+              height: 45,
+              paddingHorizontal: 10,
+              fontSize: 18,
+            }}
+            placeholder={'Search'}
+            placeholderTextColor={'#666'}
+          />
+        </View>
         {mapMarkers()}
         </MapView> 
          </View> 
