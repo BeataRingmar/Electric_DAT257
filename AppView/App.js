@@ -1,9 +1,9 @@
-import  React, {useState,useEffect} from 'react'; 
-import MapView, {Marker, onRegionChange} from 'react-native-maps';
-import {StyleSheet, View, SafeAreaView, Dimensions,Text, ImageBackground, TextInput} from 'react-native';
+import  React, {useState,useEffect, useRef} from 'react'; 
+import MapView, {Marker} from 'react-native-maps';
+import {StyleSheet, View,  Dimensions,Text, ImageBackground, Image} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native'; 
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import { GooglePlacesAutocomplete,setRegion} from 'react-native-google-places-autocomplete'
+import {GooglePlacesAutocomplete} from 'react-native-google-places-autocomplete'
 import localhost from 'react-native-localhost';
 import axios from 'axios';
 
@@ -11,10 +11,23 @@ import axios from 'axios';
 
 export default function App(){
 
-
   const [bathroomList, setBathroomList] = useState([]);
+ 
+  const [region, setRegion] = useState({
+    latitude: 57.708870,
+    longitude: 11.974560,
+    latitudeDelta: 0.062,
+    longitudeDelta: 0.025,
+  }); 
+
+  const mapView = useRef(null);
+
+ const currentRegion = new MapView.AnimatedRegion(region);
+
   const Stack = createNativeStackNavigator();
   const image = require("../AppView/assets/Background.png");
+  const markerImage = require("../AppView/assets/BathroomMarker.png");
+
 
 
   // Fetches data from the API end point which is then made into an array using setBathroomList. 
@@ -51,51 +64,60 @@ export default function App(){
             {name: item.name, address: item.address, phone: item.phone, 
               wheelchair: item.wheelchair, baby: item.baby, free: item.free, communal: item.communal})
           } 
-         />
+         >
+           <Image source= {markerImage} style={{height: 55, width:55 }}/> 
+           </Marker>
       )
       })
     );
   };
 
+// Used for the description screen to show "yes" or "no" if a bathroom has a certain feature. 
+  const returnYes = (details) => {
+    if(details == 1){ 
+      return "Yes"} 
+    else {
+      return "No"
+    }
+  }
+
+
 // Defines the HomeScreen.
   const HomeScreen = ({navigation}) => {
     return(
-       <View style= {{marginTop: 50, flex:1}}>
+       <View style= {{marginTop: 0, flex:1}}> 
          <GooglePlacesAutocomplete
-      placeholder='Search'
+      placeholder='Search for bathrooms around your area...'
       fetchDetails= {true}
       GooglePlacesSearchQuery={{
         rankby: "distance"
       }}
       onPress={(data, details = null) => {
-        searchLocationPressed(details)
-      /*setRegion({
+        setRegion({
           latitude: details.geometry.location.lat,
           longitude: details.geometry.location.lng,
-          latitudeDelta: 0.5,
-          longitudeDelta: 0.5,
+          latitudeDelta: 0.020,
+          longitudeDelta: 0.020,
         })
-        */
-        console.log("Is somethign happening?")
-        console.log(region)
       }}
       query={{
-        key: "KEY",
+       key: "API KEY",
         language: 'en',
         components: "country:swe", 
-        //types: "establishment",
-        radius: 25,
+        radius: 100,
       }}
       styles= {{
         container: {flex: 0, position: "absolute", width: "100%", zIndex: 1},
         listView: {backgroundColor: "white"}
       }}
     />
-          <MapView
+          <MapView.Animated
+          ref={mapView}
           showsUserLocation={true}
           showsMyLocationButton={true}
           loadingEnabled={true}
           style= {styles.map}  
+          region={currentRegion}
      initialRegion={{
        latitude: 57.708870,
        longitude: 11.974560,
@@ -106,14 +128,13 @@ export default function App(){
      
      > 
      {renderMapMarkers(navigation)}
-     </MapView> 
+     </MapView.Animated> 
       </View>    
     );
   };
+
+
   
-
-
-
   //Defines the DescriptionScreen that gives details of each bathroom.
   const DescriptionScreen = ({navigation, route}) => {
     return(
@@ -121,12 +142,12 @@ export default function App(){
       <ImageBackground source={image} style={styles.image}>
       <View style={styles.box}>
    <Text style={styles.descriptionTitle}> This is {route.params.name} </Text>
-   <Text style={styles.description}> Address:{route.params.address} </Text>
-   <Text style={styles.description}> Phone number:{route.params.phone} </Text>
-   <Text style={styles.description}> Wheelchair friendly:{route.params.wheelchair} </Text>
-   <Text style={styles.description}> Baby friendly:{route.params.baby} </Text>
-   <Text style={styles.description}> Free:{route.params.free} </Text>
-   <Text style={styles.description}> Communal:{route.params.communal} </Text>
+   <Text style={styles.description}> Address: {route.params.address} </Text>
+   <Text style={styles.description}> Phone number: {route.params.phone} </Text>
+   <Text style={styles.description}> Wheelchair friendly: {returnYes(route.params.wheelchair)} </Text>
+   <Text style={styles.description}> Baby friendly: {returnYes(route.params.baby)} </Text>
+   <Text style={styles.description}> Free: {returnYes(route.params.free)} </Text>
+   <Text style={styles.description}> Communal: {returnYes(route.params.communal)} </Text>
    </View>
    </ImageBackground>
   </View>
@@ -136,23 +157,38 @@ export default function App(){
   // Creates a Stack made up of Stack.Screen components so as to easily navigate between screens.
       return (
       <NavigationContainer> 
-        <Stack.Navigator screenOptions={{
-    presentation: "modal",
-    gestureEnabled: true}}>
-          <Stack.Screen
+        <Stack.Navigator >
+          <Stack.Screen 
           name= "Home"
           component ={HomeScreen}
-          options={{headerShown: false}} 
+          options={{
+            title: "Got To Go",
+            headerStyle: {
+              backgroundColor: "#88d0ad", 
+            },
+            headerTintColor: '#fff',       
+             headerTitleStyle: {fontWeight: 'bold', fontSize: 25},
+          }}
           /> 
           <Stack.Screen
           name="Description"
            component={DescriptionScreen}
+           options={{
+            title: "About this location",
+            headerStyle: {
+              backgroundColor: "#88d0ad", 
+            },
+            headerTintColor: '#fff',       
+             headerTitleStyle: {fontWeight: 'bold'},
+          }} 
            /> 
         </Stack.Navigator>
         </NavigationContainer> 
       );
       }
     
+
+      // Style sheets for the different components
       const styles = StyleSheet.create({
         container: {
           flex: 1,
@@ -160,7 +196,6 @@ export default function App(){
           alignItems: 'flex-start',
           justifyContent: 'center',
           width: Dimensions.get('window').width,
-          //height: 0
         },
 
         descriptionTitle: {
@@ -169,7 +204,9 @@ export default function App(){
         },
 
         box:{
-          //flex: 1,
+          width: 400, 
+          height: 250,
+          marginTop: 150, 
           backgroundColor: '#88d0ad',
           borderRadius: 20,
           borderWidth: 8,
@@ -187,7 +224,7 @@ export default function App(){
         },
       
         description: {
-          fontSize: 16,
+          fontSize: 17,
           color: 'white'
         },
       
